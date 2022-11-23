@@ -17,3 +17,6 @@
 backbone部分的代码是基于paddleseg修改的
 
 本仓库的架构基于[bubbliiiing](https://github.com/bubbliiiing) 的语义分割仓库，使用方法可参考bubbliiiing的[视频](https://space.bilibili.com/472467171)
+
+数据集格式为VOC
+Dataset format refers to VOC
