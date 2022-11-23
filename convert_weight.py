@@ -1,3 +1,6 @@
+#convert paddle weight to .pth
+#usage: Place the official weight file "model.pdparams" in the root directory and run the file. It will generate "pretrained_model.pth"
+
 import paddle.fluid as fluid
 import torch
 import numpy as np
@@ -5,11 +8,11 @@ import numpy as np
 from nets.uhrnet import UHRnet
 from nets.uhrnet_training import weights_init
 
-path = 'model.pdparams'
-state = fluid.io.load_program_state(path)
+path = 'model.pdparams'   # Modify according to the actual
+model   = UHRnet(num_classes=19, backbone = 'UHRNet_W18_Small')   # Modify "backbone" as needed: UHRNet_W18_Small/UHRNet_W48
 
-model   = UHRnet(num_classes=19, backbone = 'UHRNet_W18_Small')
 weights_init(model)
+state = fluid.io.load_program_state(path)
 
 device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_dict      = model.state_dict()
