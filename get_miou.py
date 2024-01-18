@@ -3,7 +3,7 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-from hrnet import HRnet_Segmentation
+from uhrnet import UHRnet_Segmentation
 from utils.utils_metrics import compute_mIoU, show_results
 
 '''
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             os.makedirs(pred_dir)
             
         print("Load model.")
-        hrnet = HRnet_Segmentation()
+        hrnet = UHRnet_Segmentation()
         print("Load model done.")
 
         print("Get predict result.")
