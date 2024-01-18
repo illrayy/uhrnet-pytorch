@@ -10,7 +10,7 @@ from PIL import Image
 from torch import nn
 
 from nets.uhrnet import UHRnet
-from utils.utils import preprocess_input
+from utils.utils import cvtColor, preprocess_input, resize_image
 
 
 class UHRnet_Segmentation(object):
@@ -99,3 +99,52 @@ class UHRnet_Segmentation(object):
             seg_img = np.reshape(np.array(self.colors, np.uint8)[np.reshape(pr, [-1])], [orininal_h, orininal_w, -1])
             mask = np.uint8(seg_img)
             return mask
+            
+    def get_miou_png(self, image):
+        #---------------------------------------------------------#
+        #   在这里将图像转换成RGB图像，防止灰度图在预测时报错。
+        #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
+        #---------------------------------------------------------#
+        image       = cvtColor(image)
+        orininal_h  = np.array(image).shape[0]
+        orininal_w  = np.array(image).shape[1]
+        #---------------------------------------------------------#
+        #   给图像增加灰条，实现不失真的resize
+        #   也可以直接resize进行识别
+        #---------------------------------------------------------#
+        image_data, nw, nh  = resize_image(image, (self.input_shape[1],self.input_shape[0]))
+        #---------------------------------------------------------#
+        #   添加上batch_size维度
+        #---------------------------------------------------------#
+        image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)), 0)
+
+        with torch.no_grad():
+            images = torch.from_numpy(image_data)
+            if self.cuda:
+                images = images.cuda()
+                
+            #---------------------------------------------------#
+            #   图片传入网络进行预测
+            #---------------------------------------------------#
+            pr = self.net(images)[0]
+            #---------------------------------------------------#
+            #   取出每一个像素点的种类
+            #---------------------------------------------------#
+            pr = F.softmax(pr.permute(1,2,0),dim = -1).cpu().numpy()
+            #--------------------------------------#
+            #   将灰条部分截取掉
+            #--------------------------------------#
+            pr = pr[int((self.input_shape[0] - nh) // 2) : int((self.input_shape[0] - nh) // 2 + nh), \
+                    int((self.input_shape[1] - nw) // 2) : int((self.input_shape[1] - nw) // 2 + nw)]
+            #---------------------------------------------------#
+            #   进行图片的resize
+            #---------------------------------------------------#
+            pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation = cv2.INTER_LINEAR)
+            #---------------------------------------------------#
+            #   取出每一个像素点的种类
+            #---------------------------------------------------#
+            pr = pr.argmax(axis=-1)
+    
+        image = Image.fromarray(np.uint8(pr))
+        return image
+
